@@ -4,12 +4,17 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.utils import timezone
 from django.conf import settings
 # Create your models here.
+
+class RoleEnum(models.TextChoices):
+    JOBSEEKER = 'jobseeker', 'Job Seeker'
+    EMPLOYER = 'employer' , 'Employer'
+
 class UserManager(BaseUserManager):
-    def create_user(self, email, full_name, password=None, **extra_fields):
+    def create_user(self, email, full_name, password=None,role=RoleEnum.JOBSEEKER, **extra_fields):
         if not email:
             raise ValueError("Email is required")
         email = self.normalize_email(email)
-        user = self.model(email=email, full_name=full_name, **extra_fields)
+        user = self.model(email=email, full_name=full_name,role=role, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -22,6 +27,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=100)
+    role = models.CharField(max_length=20, choices=RoleEnum.choices, default=RoleEnum.JOBSEEKER)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -39,6 +45,7 @@ class JobSeekerProfile(models.Model):
     resume=models.FileField(upload_to='resumes/',blank=True,null=True)
     skills = models.TextField(blank=True)
     experience=models.PositiveIntegerField(default=0)
+    job_title = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return f"Jobseeker: {self.user.full_name}"
